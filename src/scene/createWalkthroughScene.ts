@@ -12,10 +12,6 @@ import {
   WebGLRenderer,
 } from 'three'
 import { createBuildings } from '../buildings/Buildings'
-import {
-  createBuildingTransformHandle,
-  type BuildingTransformHandle,
-} from './buildingTransformControls'
 import { createGroundPlane } from './createGroundPlane'
 import { createSkyEnvironment } from './createSkyEnvironment'
 import { WalkController } from './WalkController'
@@ -27,12 +23,10 @@ export type ProximityBuilding = {
 }
 
 type WalkthroughSceneOptions = {
-  onBuildingTransformsReady?: (handles: BuildingTransformHandle[]) => void
   onProximityBuildingChange?: (building: ProximityBuilding | null) => void
 }
 
 const PROXIMITY_RADIUS = 7
-const adjustableBuildingNames = new Set(['HFH'])
 const proximityBuildingCopy: Record<string, ProximityBuilding> = {
   MRL: {
     id: 'MRL',
@@ -51,6 +45,12 @@ const proximityBuildingCopy: Record<string, ProximityBuilding> = {
     title: 'Approaching Harold Frank Hall',
     description:
       'You are approaching Harold Frank Hall, a 60,000-square-foot UCSB Engineering building with Computer Science and Electrical and Computer Engineering offices and labs. The building was named in 2006 for Diana and Harold Frank, supporters of UCSB Engineering.',
+  },
+  CHEM: {
+    id: 'CHEM',
+    title: 'Approaching Chemistry',
+    description:
+      'You are approaching UCSB Chemistry, home to the Department of Chemistry and Biochemistry. The department spans areas from materials chemistry to chemical biology and supports research, teaching, and shared scientific facilities.',
   },
 }
 const proximityTargetPosition = new Vector3()
@@ -108,9 +108,6 @@ export function createWalkthroughScene(
   const buildings = createBuildings()
   const walkableSurface = new Group()
   const controls = new WalkController(canvas, camera, walkableSurface)
-  const buildingTransformHandles = buildings
-    .filter((building) => adjustableBuildingNames.has(building.name))
-    .map(createBuildingTransformHandle)
   let activeProximityBuildingId: string | null = null
   let lastFrame = performance.now()
 
@@ -128,7 +125,6 @@ export function createWalkthroughScene(
   walkableSurface.add(...buildings)
   scene.add(walkableSurface)
   scene.add(spark)
-  options.onBuildingTransformsReady?.(buildingTransformHandles)
 
   const resize = () => {
     const width = canvas.clientWidth || window.innerWidth
